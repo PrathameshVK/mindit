@@ -1,22 +1,21 @@
 const express=require('express');
 const router=express.Router();
+const bcrypt=require('bcryptjs');
 const User=require('../models/user');
 
 router.post('/',async function(req,res){
     const userData=req.body;
-    User.findOne({email: userData.email}, (error,user)=>{
-        if(error){
-            console.log(error);
+    const fetchUserData= await User.findOne({email: userData.email});
+    if(!fetchUserData){
+        res.status(401).json({"success": false, "message": "Invalid Email"});
+    }else{
+        const checkPassword=await bcrypt.compare(userData.password, fetchUserData.password);
+        if(checkPassword){
+            res.status(200).json({"success": true, "message": "login successful"});
         }else{
-            if(!user){
-                res.status(401).send('Invalid email');
-            }else if(user.password!=userData.password){
-                res.status(401).send('Invalid password');
-            }else{
-                res.status(200).send(user);
-            }
+            res.status(401).json({"success": false, "message": "Invalid Password"});
         }
-    });
+    }
 });
 
 module.exports=router;
